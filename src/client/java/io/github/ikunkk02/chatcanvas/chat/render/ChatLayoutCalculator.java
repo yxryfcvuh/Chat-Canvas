@@ -109,7 +109,7 @@ public final class ChatLayoutCalculator {
 			if (match >= 0) cursor[0] = match + 1;
 			return true;
 		});
-		return new LineMapping(indices.stream().mapToInt(Integer::intValue).toArray(), cursor[0]);
+		return new LineMapping(indices.stream().mapToInt(i -> i).toArray(), cursor[0]);
 	}
 
 	private static int nextSource(int[] source, int from, int codePoint) {

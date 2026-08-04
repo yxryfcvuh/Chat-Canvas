@@ -28,8 +28,8 @@ public final class PlayerNameHitboxRegistry {
 				.filter(hitbox -> mouseX >= hitbox.left() && mouseX <= hitbox.right()
 						&& mouseY >= hitbox.top() && mouseY <= hitbox.bottom())
 				.min(Comparator
-						.comparingDouble(PlayerNameHitboxRegistry::area)
-						.thenComparingDouble(hitbox -> centerDistanceSquared(hitbox, mouseX, mouseY))
+						.comparingDouble((PlayerNameHitbox hitbox) -> PlayerNameHitboxRegistry.area(hitbox))
+						.thenComparingDouble((PlayerNameHitbox hitbox) -> centerDistanceSquared(hitbox, mouseX, mouseY))
 						.thenComparingInt(hitbox -> -VISIBLE.indexOf(hitbox)));
 	}
 

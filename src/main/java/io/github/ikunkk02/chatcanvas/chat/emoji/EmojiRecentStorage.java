@@ -84,7 +84,7 @@ public final class EmojiRecentStorage {
 			}
 			List<RecentEmojiEntry> recent = new ArrayList<>(unique.values());
 			recent.sort(Comparator.comparingLong(
-					RecentEmojiEntry::lastUsedAt).reversed());
+					(RecentEmojiEntry entry) -> entry.lastUsedAt()).reversed());
 			if (recent.size() > EmojiRecentManager.MAX_RECENT) {
 				recent = new ArrayList<>(recent.subList(0, EmojiRecentManager.MAX_RECENT));
 				malformed++;

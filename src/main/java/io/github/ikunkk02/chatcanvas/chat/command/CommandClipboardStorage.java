@@ -55,7 +55,7 @@ public final class CommandClipboardStorage {
 					// A malformed command is isolated from the rest of the file.
 				}
 			}
-			commands.sort(Comparator.comparingInt(SavedCommand::sortOrder));
+			commands.sort(Comparator.comparingInt(command -> command.sortOrder()));
 			CommandClipboardData data = migrate(new CommandClipboardData(version, commands));
 			if (version != CommandClipboardData.CURRENT_VERSION
 					|| commands.size() != entries.size()) save(data);

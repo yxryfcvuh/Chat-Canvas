@@ -955,7 +955,9 @@ public final class AnimatedSettingsPanel {
 						component.getWidth(), component.getHeight(), 0xAAFFFFFF);
 			});
 			registerPageButton(Category.PLAYER_COLORS, swatch);
-			paletteRow.child(swatch);
+			if (paletteRow != null) {
+				paletteRow.child(swatch);
+			}
 		}
 		body.child(palette);
 		ButtonComponent restorePalette = ModernUiTheme.button(

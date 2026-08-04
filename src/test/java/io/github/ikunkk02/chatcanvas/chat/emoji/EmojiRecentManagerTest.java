@@ -40,7 +40,7 @@ class EmojiRecentManagerTest {
 
 		assertEquals(EmojiRecentManager.MAX_RECENT, manager.recent().size());
 		assertEquals(EmojiRecentManager.MAX_RECENT, manager.recent().stream()
-				.map(RecentEmojiEntry::unicode).distinct().count());
+				.map(entry -> entry.unicode()).distinct().count());
 	}
 
 	@Test

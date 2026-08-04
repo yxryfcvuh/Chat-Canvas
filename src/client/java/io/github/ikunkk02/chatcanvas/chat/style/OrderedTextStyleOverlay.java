@@ -13,7 +13,7 @@ public final class OrderedTextStyleOverlay {
 	public static OrderedText apply(OrderedText original, List<StyledRange> ranges) {
 		if (original == null || ranges == null || ranges.isEmpty()) return original;
 		List<StyledRange> ordered = ranges.stream()
-				.sorted(Comparator.comparingInt(StyledRange::priority))
+				.sorted(Comparator.comparingInt(range -> range.priority()))
 				.toList();
 		return visitor -> {
 			int[] codePointIndex = {0};

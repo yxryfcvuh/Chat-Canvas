@@ -146,7 +146,7 @@ public final class ChannelMessageLayoutEngine {
 			return true;
 		});
 		return new LineMapping(
-				indices.stream().mapToInt(Integer::intValue).toArray(), cursor[0]);
+				indices.stream().mapToInt(i -> i).toArray(), cursor[0]);
 	}
 
 	private static int nextSource(int[] source, int from, int codePoint) {

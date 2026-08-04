@@ -202,7 +202,7 @@ public final class ChatMessageMetadataRegistry {
 				}
 				return true;
 			});
-			result.add(new LineIndex(globalIndices.stream().mapToInt(Integer::intValue).toArray()));
+			result.add(new LineIndex(globalIndices.stream().mapToInt(i -> i).toArray()));
 		}
 		return result;
 	}

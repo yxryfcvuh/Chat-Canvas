@@ -27,7 +27,7 @@ class CommandToolManagerTest {
 		manager.recordExecuted("/token abc", "one", 500L);
 
 		assertEquals(List.of("/time set day", "/weather clear"),
-				manager.recent().stream().map(CommandHistoryEntry::command).toList());
+				manager.recent().stream().map(entry -> entry.command()).toList());
 		assertEquals(300L, manager.recent().getFirst().executedAt());
 		assertTrue(manager.flush());
 	}

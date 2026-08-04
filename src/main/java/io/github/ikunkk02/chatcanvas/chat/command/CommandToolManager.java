@@ -252,8 +252,7 @@ public final class CommandToolManager {
 
 	private void trimRecent(int capacity) {
 		while (recent.size() > capacity) recent.removeLast();
-		recent.sort(Comparator.comparingLong(
-				CommandHistoryEntry::executedAt).reversed());
+		recent.sort(Comparator.comparingLong((CommandHistoryEntry entry) -> entry.executedAt()).reversed());
 	}
 
 	private void normalizeFavoriteOrder() {

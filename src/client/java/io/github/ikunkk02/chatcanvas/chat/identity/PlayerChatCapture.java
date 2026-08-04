@@ -36,7 +36,7 @@ public final class PlayerChatCapture {
 					message,
 					signatureOf(signedMessage),
 					MessageIngress.CHAT,
-					metadata.map(ChatMessageMetadata::sender).orElse(null),
+					metadata.map(value -> value.sender()).orElse(null),
 					params.name(),
 					false);
 		});
@@ -48,7 +48,7 @@ public final class PlayerChatCapture {
 					.registerIncoming(message, null, value));
 			ChatCanvasMessageIngress.instance().registerIncoming(
 					message, null, MessageIngress.GAME,
-					metadata.map(ChatMessageMetadata::sender).orElse(null),
+					metadata.map(value -> value.sender()).orElse(null),
 					null, false);
 		});
 		ClientSendMessageEvents.CHAT.register(

@@ -27,7 +27,7 @@ public final class EmojiRecentManager {
 	public synchronized boolean recordSelected(String unicode) {
 		if (!EmojiRegistry.instance().contains(unicode)) return false;
 		long newest = recent.stream().mapToLong(
-				RecentEmojiEntry::lastUsedAt).max().orElse(0L);
+				entry -> entry.lastUsedAt()).max().orElse(0L);
 		long now = Math.max(Math.max(1L, clock.millis()), newest + 1L);
 		int count = 1;
 		for (int index = 0; index < recent.size(); index++) {
@@ -39,7 +39,7 @@ public final class EmojiRecentManager {
 		}
 		recent.add(new RecentEmojiEntry(unicode, now, count));
 		recent.sort(Comparator.comparingLong(
-				RecentEmojiEntry::lastUsedAt).reversed());
+				(RecentEmojiEntry entry) -> entry.lastUsedAt()).reversed());
 		while (recent.size() > MAX_RECENT) recent.remove(recent.size() - 1);
 		return storage.save(data());
 	}

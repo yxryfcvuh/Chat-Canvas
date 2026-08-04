@@ -26,9 +26,9 @@ public final class PlayerRosterTracker {
 			return;
 		}
 		List<PlayerChatIdentity> updated = handler.getListedPlayerListEntries().stream()
-				.map(PlayerListEntry::getProfile)
-				.map(PlayerRosterTracker::fromProfile)
-				.sorted(Comparator.comparing(PlayerChatIdentity::playerName,
+				.map((PlayerListEntry entry) -> entry.getProfile())
+				.map(profile -> PlayerRosterTracker.fromProfile(profile))
+				.sorted(Comparator.comparing((PlayerChatIdentity player) -> player.playerName(),
 						String.CASE_INSENSITIVE_ORDER))
 				.toList();
 		if (!updated.equals(online)) {

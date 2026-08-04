@@ -1,4 +1,4 @@
-package io.github.ikunkk02.chatcanvas.chat.command.ui;
+﻿package io.github.ikunkk02.chatcanvas.chat.command.ui;
 
 import io.github.ikunkk02.chatcanvas.chat.command.ClipboardCommandCandidate;
 import io.github.ikunkk02.chatcanvas.chat.command.ClipboardCommandParseResult;

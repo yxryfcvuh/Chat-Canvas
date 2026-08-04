@@ -77,8 +77,8 @@ public final class CommandToolStorage {
 				}
 			}
 			recent.sort(Comparator.comparingLong(
-					CommandHistoryEntry::executedAt).reversed());
-			favorites.sort(Comparator.comparingInt(FavoriteCommandEntry::sortOrder));
+					(CommandHistoryEntry entry) -> entry.executedAt()).reversed());
+			favorites.sort(Comparator.comparingInt(entry -> entry.sortOrder()));
 			CommandToolData data = new CommandToolData(
 					CommandToolData.CURRENT_VERSION,
 					bool(root, "migrationCompleted", false),

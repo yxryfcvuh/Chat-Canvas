@@ -13,7 +13,7 @@ class EmojiRegistryTest {
 
 		assertEquals(81, registry.entries().size());
 		assertEquals(81, registry.entries().stream()
-				.map(EmojiEntry::unicode).distinct().count());
+				.map(entry -> entry.unicode()).distinct().count());
 	}
 
 	@Test
@@ -27,7 +27,7 @@ class EmojiRegistryTest {
 		assertTrue(registry.search("heart").stream()
 				.anyMatch(entry -> entry.unicode().equals("❤️")));
 		assertEquals(List.of("🔥"), registry.search("🔥").stream()
-				.map(EmojiEntry::unicode).toList());
+				.map(entry -> entry.unicode()).toList());
 	}
 
 	@Test

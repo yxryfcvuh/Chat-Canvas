@@ -54,6 +54,13 @@ public final class PendingMessageContextRegistry {
 		if (pending == null && signature == null) {
 			pending = consumeUnsigned(message.getString(), System.currentTimeMillis());
 		}
+		// Last-resort: try unsigned text match even when a non-matching
+		// signature was provided. This fixes server-side message routing
+		// where the Text identity and signature may both differ between
+		// the Fabric API event and the vanilla ChatHud.addMessage() call.
+		if (pending == null) {
+			pending = consumeUnsigned(message.getString(), System.currentTimeMillis());
+		}
 		if (queue != null && queue.isEmpty()) identities.remove(message);
 		if (pending != null) {
 			unsignedOrder.removeFirstOccurrence(pending);

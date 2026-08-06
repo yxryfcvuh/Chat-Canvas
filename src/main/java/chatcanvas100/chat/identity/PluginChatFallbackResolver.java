@@ -22,9 +22,6 @@ public final class PluginChatFallbackResolver {
 		if (message == null || onlinePlayers == null || onlinePlayers.isEmpty()) {
 			return Optional.empty();
 		}
-		if (message.getContent() instanceof TranslatableTextContent) {
-			return Optional.empty();
-		}
 
 		String plain = message.getString();
 		List<PlayerChatIdentity> players = new ArrayList<>(onlinePlayers);

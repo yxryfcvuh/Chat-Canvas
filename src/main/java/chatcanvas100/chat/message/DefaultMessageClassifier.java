@@ -104,8 +104,11 @@ public final class DefaultMessageClassifier implements MessageClassifier {
 	}
 
 	private static ClassifiedMessage translatedPlayerChat(Text message, MessageContext context) {
-		if (!(message.getContent() instanceof TranslatableTextContent translated)
-				|| !translated.getKey().equals("chat.type.text")) {
+		if (!(message.getContent() instanceof TranslatableTextContent translated)) {
+			return null;
+		}
+		String key = translated.getKey();
+		if (!isChatTypeKey(key)) {
 			return null;
 		}
 		Object[] args = translated.getArgs();
@@ -120,6 +123,24 @@ public final class DefaultMessageClassifier implements MessageClassifier {
 			matched = player;
 		}
 		return matched == null ? null : player(message, matched, context);
+	}
+
+	/**
+	 * Recognises translatable keys that carry player chat content.
+	 * In 1.21+ the chat type system may produce keys such as
+	 * {@code chat.type.text}, {@code chat.type.announcement}, or
+	 * server-defined variants with a namespace prefix.
+	 */
+	private static boolean isChatTypeKey(String key) {
+		if (key.equals("chat.type.text")) return true;
+		if (key.equals("chat.type.announcement")) return true;
+		if (key.equals("chat.type.team")) return true;
+		// Also accept namespaced variants such as "minecraft:chat.type.text"
+		int colon = key.lastIndexOf(':');
+		String bareKey = colon >= 0 ? key.substring(colon + 1) : key;
+		return bareKey.equals("chat.type.text")
+				|| bareKey.equals("chat.type.announcement")
+				|| bareKey.equals("chat.type.team");
 	}
 
 	private static boolean isCommandError(String key) {

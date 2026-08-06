@@ -128,7 +128,10 @@ public final class DefaultMessageClassifier implements MessageClassifier {
 		if (key.startsWith("chat.") || key.startsWith("multiplayer.")) {
 			return ChatCanvasMessageSource.SYSTEM;
 		}
-		return ChatCanvasMessageSource.SERVER_NOTICE;
+		// Do NOT return SERVER_NOTICE for unrecognised keys — that would
+		// short-circuit PluginChatFallbackResolver, which can still extract
+		// a player name from the plain-text content.
+		return null;
 	}
 
 	private static ClassifiedMessage translatedPlayerChat(Text message, MessageContext context) {
@@ -173,11 +176,18 @@ public final class DefaultMessageClassifier implements MessageClassifier {
 	 * In 1.21+ the chat type system may produce keys such as
 	 * {@code chat.type.text}, {@code chat.type.announcement}, or
 	 * server-defined variants with a namespace prefix.
+	 * <p>
+	 * Some servers (especially those with chat plugins) use
+	 * simple format strings like {@code %s} or {@code %1$s}
+	 * as the translatable key, with the entire rendered chat
+	 * line packed into the first argument.
 	 */
 	private static boolean isChatTypeKey(String key) {
 		if (key.equals("chat.type.text")) return true;
 		if (key.equals("chat.type.announcement")) return true;
 		if (key.equals("chat.type.team")) return true;
+		// Simple format-string keys used by plugin-based servers
+		if (key.equals("%s") || key.equals("%1$s")) return true;
 		// Also accept namespaced variants such as "minecraft:chat.type.text"
 		int colon = key.lastIndexOf(':');
 		String bareKey = colon >= 0 ? key.substring(colon + 1) : key;

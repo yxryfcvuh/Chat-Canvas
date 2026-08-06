@@ -1,0 +1,42 @@
+package chatcanvas100.compat;
+
+import chatcanvas100.ChatCanvas;
+import chatcanvas100.chat.text.ChatHeadsCompat;
+import net.fabricmc.loader.api.FabricLoader;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+public final class ChatCanvasCompat {
+	private static final Map<String, Boolean> DETECTED = new LinkedHashMap<>();
+
+	private ChatCanvasCompat() {}
+
+	public static void initialize() {
+		if (!DETECTED.isEmpty()) return;
+		FabricLoader loader = FabricLoader.getInstance();
+		for (String id : new String[]{"chat_heads", "morechathistory", "chatanimation", "smoothscroll"}) {
+			boolean present = loader.isModLoaded(id);
+			DETECTED.put(id, present);
+			if (present) {
+				if (id.equals("chat_heads")) {
+					if (ChatHeadsCompat.channelAdapterAvailable()) {
+						ChatCanvas.LOGGER.info(
+								"Chat Canvas compatibility active for chat_heads: custom player channel avatar adapter ready");
+					} else {
+						ChatCanvas.LOGGER.warn(
+								"Chat Heads detected, but its avatar API is unavailable; using text-only player chat");
+					}
+				} else {
+					ChatCanvas.LOGGER.info(
+							"Chat Canvas compatibility active for {}: vanilla history/resources retained; custom channels remain isolated",
+							id);
+				}
+			}
+		}
+	}
+
+	public static Map<String, Boolean> detected() {
+		return Map.copyOf(DETECTED);
+	}
+}

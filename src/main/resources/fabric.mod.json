@@ -1,0 +1,35 @@
+{
+	"schemaVersion": 1,
+	"id": "chat-canvas",
+	"version": "${version}",
+	"name": "Chat Canvas",
+	"description": "Dual chat channel - player chat and command/system channels with independent layout.",
+	"authors": ["Me!"],
+	"contact": {
+		"homepage": "https://github.com/ikunkk02-afk/Chat-Canvas",
+		"sources": "https://github.com/ikunkk02-afk/Chat-Canvas"
+	},
+	"license": "MIT",
+	"icon": "assets/chat-canvas/icon.png",
+	"environment": "client",
+	"entrypoints": {
+		"main": ["chatcanvas100.ChatCanvas"],
+		"client": ["chatcanvas100.ChatCanvasClient"],
+		"modmenu": ["chatcanvas100.integration.ModMenuIntegration"]
+	},
+	"mixins": [
+		"chat-canvas.mixins.json",
+		{
+			"config": "chat-canvas.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.3",
+		"minecraft": "~1.21.11",
+		"java": ">=21",
+		"fabric-api": ">=0.141.6",
+		"owo": ">=0.13.0"
+	},
+	"suggests": { "modmenu": ">=17.0.0" }
+}

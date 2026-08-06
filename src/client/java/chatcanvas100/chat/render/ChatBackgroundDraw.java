@@ -1,0 +1,35 @@
+package chatcanvas100.chat.render;
+
+import net.minecraft.client.gui.DrawContext;
+import chatcanvas100.chat.layout.ChatBackgroundBounds;
+import io.wispforest.owo.ui.core.OwoUIGraphics;
+
+public final class ChatBackgroundDraw {
+	private ChatBackgroundDraw() {
+	}
+
+	public static void fill(DrawContext context, ChatBackgroundBounds bounds, int color) {
+		if (bounds == null || !bounds.visible() || color >>> 24 == 0) {
+			return;
+		}
+		context.fill(bounds.left(), bounds.top(), bounds.right(), bounds.bottom(), color);
+	}
+
+	public static void drawRectBorder(DrawContext context, int left, int top,
+									  int right, int bottom, int color) {
+		if (color >>> 24 == 0 || right - left <= 1 || bottom - top <= 1) {
+			return;
+		}
+		context.fill(left, top, right, top + 1, color);
+		context.fill(left, bottom - 1, right, bottom, color);
+		if (bottom - top > 2) {
+			context.fill(left, top + 1, left + 1, bottom - 1, color);
+			context.fill(right - 1, top + 1, right, bottom - 1, color);
+		}
+	}
+
+	public static void drawBorder(DrawContext context, int x, int y,
+								  int width, int height, int color) {
+		drawRectBorder(context, x, y, x + width, y + height, color);
+	}
+}

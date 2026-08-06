@@ -158,6 +158,16 @@ public abstract class ChatHudMixin {
 	}
 
 	@Inject(
+			method = "addMessage(Lnet/minecraft/text/Text;)V",
+			at = @At("HEAD"),
+			require = 0
+	)
+	private void chat_canvas$captureTextOnlyMessage(
+			Text message, CallbackInfo ci) {
+		ChatCanvasMessageIngress.instance().acceptFromChatHud(message, null);
+	}
+
+	@Inject(
 			method = "addMessage(Lnet/minecraft/text/Text;Lnet/minecraft/network/message/MessageSignatureData;Lnet/minecraft/client/gui/hud/MessageIndicator;)V",
 			at = @At("HEAD")
 	)

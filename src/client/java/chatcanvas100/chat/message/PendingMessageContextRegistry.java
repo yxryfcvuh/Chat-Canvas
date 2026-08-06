@@ -13,13 +13,18 @@ import java.util.UUID;
 
 public final class PendingMessageContextRegistry {
 	private static final int CAPACITY = 256;
-	private static final long UNSIGNED_TTL_MS = 5_000L;
+	private static final long PLAIN_TEXT_TTL_MS = 5_000L;
 	private final LinkedHashMap<MessageSignatureData, PendingMessage> signatures =
 			new LinkedHashMap<>();
 	private final IdentityHashMap<Text, Deque<PendingMessage>> identities =
 			new IdentityHashMap<>();
 	private final Deque<Text> order = new ArrayDeque<>();
-	private final Deque<PendingMessage> unsignedOrder = new ArrayDeque<>();
+	// Index ALL pending messages by plain text, not just unsigned ones.
+	// This is the last-resort fallback when both signature and Text-identity
+	// lookups fail — common on servers where the Fabric API event and
+	// vanilla ChatHud.addMessage() receive distinct Text objects.
+	private final LinkedHashMap<String, Deque<PendingMessage>> byText =
+			new LinkedHashMap<>();
 
 	public synchronized PendingMessage register(
 			Text message, MessageSignatureData signature, MessageContext context) {
@@ -35,36 +40,34 @@ public final class PendingMessageContextRegistry {
 		}
 		identities.computeIfAbsent(message, ignored -> new ArrayDeque<>()).addLast(pending);
 		order.addLast(message);
-		if (signature == null) {
-			unsignedOrder.addLast(pending);
-			while (unsignedOrder.size() > CAPACITY) unsignedOrder.removeFirst();
-		}
+		byText.computeIfAbsent(pending.plainText(), ignored -> new ArrayDeque<>())
+				.addLast(pending);
 		while (order.size() > CAPACITY) removeOldest();
 		return pending;
 	}
 
 	public synchronized PendingMessage consume(Text message, MessageSignatureData signature) {
+		// 1) Match by signature (most reliable)
 		PendingMessage pending = signature == null ? null : signatures.remove(signature);
 		Deque<PendingMessage> queue = identities.get(message);
 		if (pending != null && queue != null) {
 			queue.removeFirstOccurrence(pending);
 		} else if (pending == null && queue != null) {
+			// 2) Match by Text identity
 			pending = queue.pollFirst();
 		}
-		if (pending == null && signature == null) {
-			pending = consumeUnsigned(message.getString(), System.currentTimeMillis());
-		}
-		// Last-resort: try unsigned text match even when a non-matching
-		// signature was provided. This fixes server-side message routing
-		// where the Text identity and signature may both differ between
-		// the Fabric API event and the vanilla ChatHud.addMessage() call.
+		// 3) Match by plain text (last-resort for BOTH signed and unsigned)
 		if (pending == null) {
-			pending = consumeUnsigned(message.getString(), System.currentTimeMillis());
+			pending = consumeByPlainText(message.getString(), System.currentTimeMillis());
 		}
 		if (queue != null && queue.isEmpty()) identities.remove(message);
 		if (pending != null) {
-			unsignedOrder.removeFirstOccurrence(pending);
 			removeOneOrderReference(message);
+			Deque<PendingMessage> textQueue = byText.get(pending.plainText());
+			if (textQueue != null) {
+				textQueue.removeFirstOccurrence(pending);
+				if (textQueue.isEmpty()) byText.remove(pending.plainText());
+			}
 		}
 		return pending;
 	}
@@ -73,7 +76,7 @@ public final class PendingMessageContextRegistry {
 		signatures.clear();
 		identities.clear();
 		order.clear();
-		unsignedOrder.clear();
+		byText.clear();
 	}
 
 	private void trimSignatures() {
@@ -94,7 +97,11 @@ public final class PendingMessageContextRegistry {
 		if (queue.isEmpty()) identities.remove(oldest);
 		if (removed != null) {
 			signatures.values().removeIf(value -> value == removed);
-			unsignedOrder.removeFirstOccurrence(removed);
+			Deque<PendingMessage> textQueue = byText.get(removed.plainText());
+			if (textQueue != null) {
+				textQueue.removeFirstOccurrence(removed);
+				if (textQueue.isEmpty()) byText.remove(removed.plainText());
+			}
 		}
 	}
 
@@ -108,19 +115,30 @@ public final class PendingMessageContextRegistry {
 		}
 	}
 
-	private PendingMessage consumeUnsigned(String plainText, long nowMs) {
-		while (!unsignedOrder.isEmpty()
-				&& nowMs - unsignedOrder.peekFirst().registeredAtMs() > UNSIGNED_TTL_MS) {
-			unsignedOrder.removeFirst();
-		}
-		for (Iterator<PendingMessage> iterator = unsignedOrder.iterator(); iterator.hasNext();) {
+	/**
+	 * Matches a pending message by its plain-text content.  Works for ALL
+	 * messages — signed and unsigned alike.  This is the fallback when
+	 * both signature lookup and {@code Text}-identity lookup fail, which
+	 * happens frequently on multiplayer servers where Fabric API and the
+	 * vanilla {@code ChatHud.addMessage()} produce distinct {@code Text}
+	 * instances for the same chat line.
+	 */
+	private PendingMessage consumeByPlainText(String plainText, long nowMs) {
+		Deque<PendingMessage> queue = byText.get(plainText);
+		if (queue == null) return null;
+		// Expire stale entries
+		Iterator<PendingMessage> iterator = queue.iterator();
+		while (iterator.hasNext()) {
 			PendingMessage candidate = iterator.next();
-			if (candidate.plainText().equals(plainText)) {
+			if (nowMs - candidate.registeredAtMs() > PLAIN_TEXT_TTL_MS) {
 				iterator.remove();
-				return candidate;
 			}
 		}
-		return null;
+		if (queue.isEmpty()) {
+			byText.remove(plainText);
+			return null;
+		}
+		return queue.pollFirst();
 	}
 
 	public record PendingMessage(

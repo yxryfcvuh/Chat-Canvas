@@ -41,13 +41,20 @@ public final class ChatCanvasMessageIngress {
 		if (fallbackBridge) return false;
 		PendingMessageContextRegistry.PendingMessage registered =
 				pending.consume(message, signature);
+		boolean matched = registered != null;
 		MessageContext context = registered == null
 				? context(MessageIngress.DIRECT_HUD, signature, null, null, false)
 				: registered.context();
 		UUID id = registered == null
 				? signature == null ? UUID.randomUUID() : UUID.nameUUIDFromBytes(signature.data())
 				: registered.messageId();
-		return accept(id, message, context, System.currentTimeMillis());
+		boolean accepted = accept(id, message, context, System.currentTimeMillis());
+		if (!matched && accepted) {
+			ChatCanvas.LOGGER.debug(
+					"Chat routing: pending miss — classified via fallback. ingress={} text='{}'",
+					context.ingress(), message.getString());
+		}
+		return accepted;
 	}
 
 	public boolean acceptCommand(String commandWithoutSlash) {

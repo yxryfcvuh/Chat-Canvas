@@ -1,5 +1,6 @@
 package chatcanvas100.chat.message;
 
+import chatcanvas100.ChatCanvas;
 import chatcanvas100.chat.identity.ChatMessageMetadata;
 import chatcanvas100.chat.identity.PlayerChatIdentity;
 import chatcanvas100.chat.identity.PluginChatFallbackResolver;
@@ -17,29 +18,56 @@ public final class DefaultMessageClassifier implements MessageClassifier {
 				? MessageContext.direct(java.util.List.of(), null, "")
 				: context;
 		if (safe.ingress() == MessageIngress.CHAT) {
-			return player(message, safe.sender(), safe);
+			ClassifiedMessage r = player(message, safe.sender(), safe);
+			log("CHAT_ingress", r, message);
+			return r;
 		}
 		if (safe.ingress() == MessageIngress.COMMAND_INPUT) {
-			return system(message, ChatCanvasMessageSource.COMMAND_INPUT);
+			ClassifiedMessage r = system(message, ChatCanvasMessageSource.COMMAND_INPUT);
+			log("COMMAND_INPUT_ingress", r, message);
+			return r;
 		}
 		if (safe.ingress() == MessageIngress.CHAT_CANVAS_ERROR) {
-			return system(message, ChatCanvasMessageSource.CHAT_CANVAS_ERROR);
+			ClassifiedMessage r = system(message, ChatCanvasMessageSource.CHAT_CANVAS_ERROR);
+			log("ERROR_ingress", r, message);
+			return r;
 		}
 		if (safe.overlay()) {
-			return system(message, ChatCanvasMessageSource.UNKNOWN);
+			ClassifiedMessage r = system(message, ChatCanvasMessageSource.UNKNOWN);
+			log("overlay", r, message);
+			return r;
 		}
 
 		ClassifiedMessage translatedPlayerChat = translatedPlayerChat(message, safe);
-		if (translatedPlayerChat != null) return translatedPlayerChat;
+		if (translatedPlayerChat != null) {
+			log("translatedPlayerChat", translatedPlayerChat, message);
+			return translatedPlayerChat;
+		}
 
 		ChatCanvasMessageSource vanilla = vanillaSource(message);
-		if (vanilla != null) return system(message, vanilla);
+		if (vanilla != null) {
+			ClassifiedMessage r = system(message, vanilla);
+			log("vanillaSrc=" + vanilla.name(), r, message);
+			return r;
+		}
 
 		var plugin = PluginChatFallbackResolver.resolve(message, safe.onlinePlayers());
-		if (plugin.isPresent()) return player(message, plugin.get().sender(), safe);
-		return system(message, safe.ingress() == MessageIngress.GAME
+		if (plugin.isPresent()) {
+			ClassifiedMessage r = player(message, plugin.get().sender(), safe);
+			log("pluginFallback", r, message);
+			return r;
+		}
+		ClassifiedMessage r = system(message, safe.ingress() == MessageIngress.GAME
 				? ChatCanvasMessageSource.SYSTEM
 				: ChatCanvasMessageSource.UNKNOWN);
+		log("FALLBACK", r, message);
+		return r;
+	}
+
+	private static void log(String path, ClassifiedMessage c, Text message) {
+		ChatCanvas.LOGGER.info("[ChatCanvas] classify: path={} -> channel={} src={} txt='{}'",
+				path, c.channel(), c.source(),
+				message.getString().replace("\n", "\\n"));
 	}
 
 	private static ClassifiedMessage player(
@@ -105,22 +133,37 @@ public final class DefaultMessageClassifier implements MessageClassifier {
 
 	private static ClassifiedMessage translatedPlayerChat(Text message, MessageContext context) {
 		if (!(message.getContent() instanceof TranslatableTextContent translated)) {
+			ChatCanvas.LOGGER.info("[ChatCanvas] classify: translatedPlayerChat -> SKIP (not translatable) txt='{}'",
+					message.getString().replace("\n", "\\n"));
 			return null;
 		}
 		String key = translated.getKey();
 		if (!isChatTypeKey(key)) {
+			ChatCanvas.LOGGER.info("[ChatCanvas] classify: translatedPlayerChat -> SKIP (key={}) txt='{}'",
+					key, message.getString().replace("\n", "\\n"));
 			return null;
 		}
 		Object[] args = translated.getArgs();
-		if (args.length == 0) return null;
+		if (args.length == 0) {
+			ChatCanvas.LOGGER.info("[ChatCanvas] classify: translatedPlayerChat -> SKIP (no args)");
+			return null;
+		}
 		String candidate = args[0] instanceof Text text
 				? text.getString() : String.valueOf(args[0]);
 		PlayerChatIdentity matched = null;
 		for (PlayerChatIdentity player : context.onlinePlayers()) {
 			if (!PlayerColorConfig.normalizeName(player.playerName()).equals(
 					PlayerColorConfig.normalizeName(candidate))) continue;
-			if (matched != null) return null;
+			if (matched != null) {
+				ChatCanvas.LOGGER.info("[ChatCanvas] classify: translatedPlayerChat -> SKIP (ambiguous: {})",
+						candidate);
+				return null;
+			}
 			matched = player;
+		}
+		if (matched == null) {
+			ChatCanvas.LOGGER.info("[ChatCanvas] classify: translatedPlayerChat -> SKIP (no match for '{}' among {} players)",
+					candidate, context.onlinePlayers().size());
 		}
 		return matched == null ? null : player(message, matched, context);
 	}

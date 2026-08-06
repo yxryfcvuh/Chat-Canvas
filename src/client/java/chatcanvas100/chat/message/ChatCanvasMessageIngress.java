@@ -42,6 +42,9 @@ public final class ChatCanvasMessageIngress {
 		PendingMessageContextRegistry.PendingMessage registered =
 				pending.consume(message, signature);
 		boolean matched = registered != null;
+		MessageIngress ingress = registered == null
+				? MessageIngress.DIRECT_HUD
+				: registered.context().ingress();
 		MessageContext context = registered == null
 				? context(MessageIngress.DIRECT_HUD, signature, null, null, false)
 				: registered.context();
@@ -49,11 +52,10 @@ public final class ChatCanvasMessageIngress {
 				? signature == null ? UUID.randomUUID() : UUID.nameUUIDFromBytes(signature.data())
 				: registered.messageId();
 		boolean accepted = accept(id, message, context, System.currentTimeMillis());
-		if (!matched && accepted) {
-			ChatCanvas.LOGGER.debug(
-					"Chat routing: pending miss — classified via fallback. ingress={} text='{}'",
-					context.ingress(), message.getString());
-		}
+		ChatCanvas.LOGGER.info(
+				"[ChatCanvas] route: pending={} ingress={} txt='{}'",
+				matched ? "HIT" : "MISS", ingress,
+				message.getString().replace("\n", "\\n"));
 		return accepted;
 	}
 
